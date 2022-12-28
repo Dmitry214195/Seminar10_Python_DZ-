@@ -1,12 +1,12 @@
 import logging
 from config import TOKEN
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, ConversationHandler)
+from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, ConversationHandler )
 
 # Логирование
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-CHOICE, RATIONAL_ONE, RATIONAL_TWO, OPERATIONS_RATIONAL, CANCEL = range(5)
+CHOICE, RATIONAL_ONE, RATIONAL_TWO, OPERATIONS_RATIONAL, fallback = range(5)
 
 def start(update, _):
     update.message.reply_text(f'Привет, {update.effective_user.first_name}, это - калькулятор. \n 1 - для операций числами; \n2 - для выхода \n')
@@ -79,29 +79,27 @@ def cancel(update, _):
     update.message.reply_text('Спасибо, до свидания!')
     return ConversationHandler.END
 
-
-if __name__ == '__main__':
-    updater = Updater(TOKEN)
-    dispatcher = updater.dispatcher
-
-    conversation_handler = ConversationHandler(  
     
-        entry_points=[CommandHandler('start', start)],
+conversation_handler =CommandHandler('start', start) 
+message_handler = CommandHandler('cansel', cancel)
+
+updater = Updater(TOKEN)
+dispatcher = updater.dispatcher   
+entry_points = [CommandHandler('start', start)],
     
-        states={
-            CHOICE: [MessageHandler(Filters.text, choice)],
-            RATIONAL_ONE: [MessageHandler(Filters.text, rational_one)],
-            RATIONAL_TWO: [MessageHandler(Filters.text, rational_two)],
-            OPERATIONS_RATIONAL: [MessageHandler(Filters.text, operatons_rational)],
+states={
+    CHOICE: [MessageHandler(Filters.text, choice)],
+    RATIONAL_ONE: [MessageHandler(Filters.text, rational_one)],
+    RATIONAL_TWO: [MessageHandler(Filters.text, rational_two)],
+    OPERATIONS_RATIONAL: [MessageHandler(Filters.text, operatons_rational)],
         },
     
-    fallbacks=[CommandHandler('cancel', cancel)],
-    )
+fallbacks = [CommandHandler('cancel', cancel)],
 
-fallbacks=CommandHandler('cancel', cancel)
 
-dispatcher.add_handler(fallbacks)
 dispatcher.add_handler(conversation_handler)
+dispatcher.add_handler(message_handler)
+
 print('server start')
 updater.start_polling()
 updater.idle()
