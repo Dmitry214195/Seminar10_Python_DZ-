@@ -1,16 +1,15 @@
 import logging
 from config import TOKEN
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, ConversationHandler )
+from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, ConversationHandler)
 
 # Логирование
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-CHOICE, RATIONAL_ONE, RATIONAL_TWO, OPERATIONS_RATIONAL, fallback = range(5)
+CHOICE, RATIONAL_ONE, RATIONAL_TWO, OPERATIONS_RATIONAL = range(4)
 
-def start(update, _):
-    update.message.reply_text(f'Привет, {update.effective_user.first_name}, это - калькулятор. \n 1 - для операций числами; \n2 - для выхода \n')
-    update.message.reply_text('Команда /cancel, чтобы прекратить разговор.\n')
+def start(update, context):
+    update.message.reply_text(f'Привет, {update.effective_user.first_name}, это - калькулятор. \n 1 - для операций рациональными числами; \n2 - для выхода \n')
     return CHOICE
 
 def choice(update, context):
@@ -25,7 +24,7 @@ def choice(update, context):
             update.message.reply_text('Спасибо, до свидания!')
             return ConversationHandler.END     
     else:
-        update.message.reply_text('Ошибка ввода. Введите цифру операции: \n 1 - для операций с числами; \n2 - для выхода \n')
+        update.message.reply_text('Ошибка ввода. Введите цифру операции: \n 1 - для операций с рациональными числами; \n2 - для выхода \n')
 
 def rational_one(update, context):
     user = update.message.from_user
@@ -34,7 +33,7 @@ def rational_one(update, context):
     if get_rational.isdigit():
         get_rational = float(get_rational)
         context.user_data['rational_one'] = get_rational
-        update.message.reply_text('Введите второе число')
+        update.message.reply_text('Введите второе рациональное число')
         return RATIONAL_TWO
     else:
         update.message.reply_text('Нужно ввести число')
@@ -68,38 +67,37 @@ def operatons_rational(update, context):
                 result = rational_one / rational_two
             except:
                 update.message.reply_text('Деление на ноль запрещено')
-        update.message.reply_text(f'Результат: {rational_one} {user_choice} {rational_two} = {result}')
+        update.message.reply_text(f'Результат: {rational_one} {user_choice} {rational_two} = {result} \n Для нового вычисления нажмите /start')
         return ConversationHandler.END
     else:
         update.message.reply_text('Ошибка ввода. Выберите действие: \n+ - для сложения; \n- - для вычетания; \n* - для умножения; \n/ - для деления. \n' )
 
-def cancel(update, _):
+def cancel(update, contex):
     user = update.message.from_user
     logger.info("Пользователь %s отменил разговор.", user.first_name)
     update.message.reply_text('Спасибо, до свидания!')
     return ConversationHandler.END
 
-    
-conversation_handler =CommandHandler('start', start) 
-message_handler = CommandHandler('cansel', cancel)
+if __name__ == '__main__':
+    updater = Updater(TOKEN)
+    dispatcher = updater.dispatcher
 
-updater = Updater(TOKEN)
-dispatcher = updater.dispatcher   
-entry_points = [CommandHandler('start', start)],
+    conversation_handler = ConversationHandler(  
     
-states={
-    CHOICE: [MessageHandler(Filters.text, choice)],
-    RATIONAL_ONE: [MessageHandler(Filters.text, rational_one)],
-    RATIONAL_TWO: [MessageHandler(Filters.text, rational_two)],
-    OPERATIONS_RATIONAL: [MessageHandler(Filters.text, operatons_rational)],
+        entry_points=[CommandHandler('start', start)],
+    
+        states={
+            CHOICE: [MessageHandler(Filters.text, choice)],
+            RATIONAL_ONE: [MessageHandler(Filters.text, rational_one)],
+            RATIONAL_TWO: [MessageHandler(Filters.text, rational_two)],
+            OPERATIONS_RATIONAL: [MessageHandler(Filters.text, operatons_rational)],
+            
         },
     
-fallbacks = [CommandHandler('cancel', cancel)],
+        fallbacks=[CommandHandler('cancel', cancel)],
+    )
 
-
-dispatcher.add_handler(conversation_handler)
-dispatcher.add_handler(message_handler)
-
-print('server start')
-updater.start_polling()
-updater.idle()
+    dispatcher.add_handler(conversation_handler)
+    print('server start')
+    updater.start_polling()
+    updater.idle()
